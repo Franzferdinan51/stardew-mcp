@@ -11,10 +11,10 @@ import (
 	copilot "github.com/github/copilot-sdk/go"
 )
 
-// Stardew Valley Game Knowledge - Shared with AI agent
+// Embedded game knowledge - no external file dependency
 const gameKnowledge = `# Stardew Valley AI Agent: High-Intelligence Protocol
 
-## 🧠 CORE LOGIC: PLANNING VS EXECUTION
+## CORE LOGIC: PLANNING VS EXECUTION
 
 **1. LONG-TERM PLANNING**: When you receive a goal, think about the sequence of areas you need to clear.
 **2. SPATIAL AWARENESS**: Check your surroundings (61x61 map) to find the nearest cluster of targets.
@@ -24,7 +24,7 @@ const gameKnowledge = `# Stardew Valley AI Agent: High-Intelligence Protocol
    - **CONFIRM** the target is in the "Tile in front" data.
    - Use the **Lowest-Energy** tool required.
 
-## 🗺️ ASCII MAP LEGEND (61x61 Vision)
+## ASCII MAP LEGEND (61x61 Vision)
 - @ : YOU (The Player)
 - . : BLANK GROUND (Walkable)
 - # : WALL / BUILDING / IMPASSABLE (Blocked)
@@ -39,7 +39,7 @@ const gameKnowledge = `# Stardew Valley AI Agent: High-Intelligence Protocol
 - ! : NPC
 - M : MONSTER
 
-## 🧭 SPATIAL COORDINATION & PRECISION
+## SPATIAL COORDINATION & PRECISION
 
 - **Coordinates**: X is horizontal (0=left), Y is vertical (0=top).
 - **Tool Range**: You can ONLY hit the tile directly in front of you.
@@ -48,23 +48,214 @@ const gameKnowledge = `# Stardew Valley AI Agent: High-Intelligence Protocol
   - **DO NOT** stand on the same tile as the target (10, 10).
   - **DO NOT** use move_to to go TO a target coordinate typed 'O' or 'T'. Use move_to to go to a '.' tile NEXT to it.
 
-## 🛠️ TOOL EFFICIENCY
+## TOOL EFFICIENCY
 
 - **SCYTHE**: Use for weeds/grass. It costs **0 ENERGY**. Highly efficient for cleanup.
 - **AXE**: Use for wood/twigs/stumps. Costs energy.
 - **PICKAXE**: Use for stones/ore. Costs energy.
 - **VERIFICATION**: After using a tool, check if the objectName/terrainType in "Tile in front" has changed to "." (walkable ground). If not, your action failed—do not keep moving, FIX it.
 
-## 🚀 INTELLIGENCE & AUTO-CORRECTION
+## INTELLIGENCE & AUTO-CORRECTION
 
 - **No Path Found?**: The tile you clicked is blocked. Try moving to a tile 1-step away from it.
 - **IsMoving Error?**: Movement is now BLOCKING. If a move tool finishes, you are at your destination. Do not issue 10 move commands in a row; wait for each.
 - **Cleaning Goals**: Don't just swing randomly. Find a target, move to it, clear it, move to the next.
 
-## 🌙 SURVIVAL & NIGHT
+## SURVIVAL & NIGHT
 
 - **2:00 AM** is a hard game-over. You MUST be in bed by **1:00 AM**.
 - Farmhouse Entrance is usually around (60, 15) on the standard farm layout, but check surroundings for "FarmHouse" warp.
+
+## CHEAT MODE (Optional Power Tools)
+
+Cheat mode provides instant, god-mode capabilities. **You must call cheat_mode_enable first** before any cheat commands work.
+
+### Enabling/Disabling
+- **cheat_mode_enable**: Activates cheat mode. Required before using any cheats.
+- **cheat_mode_disable**: Deactivates cheat mode and all persistent effects (infinite energy, time freeze).
+
+### Instant Resource Cheats
+- **cheat_set_money**: Set gold to any amount (e.g., 1000000 for 1 million gold)
+- **cheat_add_item**: Add any item by ID (e.g., "(O)465" for starfruit seeds, "(O)74" for prismatic shard)
+- **cheat_spawn_ores**: Add ores directly: copper, iron, gold, iridium, coal
+
+### Teleportation
+- **cheat_warp**: Teleport to any location (Farm, Town, Mountain, Beach, Forest, Mine, Desert, etc.)
+- **cheat_mine_warp**: Warp to specific mine level (1-120 = regular mines, 121+ = Skull Cavern)
+
+### Farming Automation
+- **cheat_water_all**: Instantly water all tilled soil
+- **cheat_grow_crops**: Instantly grow all crops to harvest-ready
+- **cheat_harvest_all**: Instantly harvest all ready crops
+- **cheat_clear_debris**: Remove all weeds, stones, twigs, grass
+- **cheat_collect_all_forage**: Collect all forage items in current location
+
+### Land Clearing & Farming Automation
+- **cheat_hoe_all**: Instantly hoe/till ALL diggable tiles in current location (optional radius parameter)
+- **cheat_cut_trees**: Instantly chop ALL trees in current location, collect wood/hardwood/sap/seeds
+- **cheat_mine_rocks**: Instantly mine ALL rocks/stones/boulders, collect stone/ores/coal/geodes
+- **cheat_dig_artifacts**: Instantly dig ALL artifact spots, collect artifacts/clay/geodes
+- **cheat_plant_seeds**: Instantly plant seeds on ALL empty hoed tiles (requires seedId parameter)
+- **cheat_fertilize_all**: Apply fertilizer to ALL hoed tiles (optional fertilizerId parameter)
+
+### Mining Automation
+- **cheat_instant_mine**: Mine ALL ore nodes in current mine level, drops go to inventory
+
+### Social/Relationship Cheats
+- **cheat_set_friendship**: Set friendship with specific NPC (use hearts: 1-10, or points: 0-2500+)
+- **cheat_max_all_friendships**: Max out ALL NPC friendships at once
+- **cheat_give_gift**: Give gift to NPC instantly (calculates friendship based on NPC's preferences)
+
+### Time Control
+- **cheat_time_set**: Set game time (600=6AM, 1200=noon, 1800=6PM, 2400=midnight)
+- **cheat_time_freeze**: Toggle time freeze ON/OFF - time stops passing
+- **cheat_infinite_energy**: Toggle infinite stamina ON/OFF - never run out of energy
+
+### Other Cheats
+- **cheat_set_energy**: Restore stamina to max
+- **cheat_set_health**: Restore health to max
+- **cheat_unlock_recipes**: Unlock ALL crafting and cooking recipes
+- **cheat_pet_all_animals**: Pet all farm animals instantly (daily affection)
+- **cheat_complete_quest**: Complete active quests (all or by specific ID)
+
+### Inventory & Upgrade Cheats
+- **cheat_upgrade_backpack**: Upgrade backpack to larger size (12, 24, or 36 slots). Default: 36 (max)
+- **cheat_upgrade_tool**: Upgrade a specific tool (Hoe, Pickaxe, Axe, WateringCan, FishingRod, Trash Can). Levels: 0=Basic, 1=Copper, 2=Steel, 3=Gold, 4=Iridium
+- **cheat_upgrade_all_tools**: Upgrade ALL tools to specified level (default: Iridium)
+- **cheat_unlock_all**: ULTIMATE CHEAT - Max backpack, all tools to iridium, all recipes, all skills to level 10, all special items (Rusty Key, Skull Key, Club Card, etc.)
+
+### Targeted/Selective Cheats (For Precise Control & Creative Farming)
+These cheats let you control EXACTLY which tiles to affect - perfect for drawing shapes and patterns!
+
+**IMPORTANT: When drawing patterns/shapes, do NOT call cheat_hoe_all first!** The pattern commands automatically clear the surrounding area and hoe only the pattern tiles.
+
+- **cheat_hoe_tiles**: Hoe SPECIFIC tiles by coordinates. Use for precise control.
+  - Parameters: tiles (format: "x,y;x,y;x,y") OR x and y for single tile
+  - Example: To hoe tiles at (10,20), (11,20), (12,20): tiles="10,20;11,20;12,20"
+  
+- **cheat_clear_tiles**: Clear SPECIFIC tiles (remove objects, terrain features, hoed dirt).
+  - Parameters: tiles or x,y for coordinates
+  - Optional: clearObjects (default true), clearFeatures (default true), clearDirt (default true)
+
+- **cheat_hoe_custom_pattern**: Draw ANY shape by designing it yourself as an ASCII grid!
+  - **YOU must think about which tiles to hoe** - design the shape in your mind first
+  - Use grid parameter: '#' or 'X' = hoe this tile, '.' or ' ' = empty
+  - Use '\n' to separate rows
+  - Pattern is centered at player position (or x,y if specified)
+  - Surrounding area is auto-cleared so your pattern stands out
+
+### Designing Patterns - THINK SPATIALLY!
+
+When asked to draw a shape, YOU must design the ASCII grid. Think about:
+1. What does this shape look like from above (top-down view)?
+2. Which tiles need to be filled vs empty?
+3. Design it row by row
+
+**Example - Heart (9 wide x 8 tall):**
+Row 0: .##...##.   <- two bumps at top
+Row 1: ####.####   <- bumps widen
+Row 2: #########   <- full width  
+Row 3: #########   <- full width
+Row 4: .#######.   <- starts narrowing
+Row 5: ..#####..   <- narrower
+Row 6: ...###...   <- narrower
+Row 7: ....#....   <- point at bottom
+Grid: .##...##.\n####.####\n#########\n#########\n.#######.\n..#####..\n...###...\n....#....
+
+**Example - Star (5 wide x 5 tall):**
+Row 0: ..#..   <- top point
+Row 1: ..#..   <- stem
+Row 2: #####   <- horizontal bar
+Row 3: .#.#.   <- lower diagonals
+Row 4: #...#   <- bottom points
+Grid: ..#..\n..#..\n#####\n.#.#.\n#...#
+
+**Example - Smiley (7 wide x 7 tall):**
+Row 0: .#####.   <- top of head
+Row 1: #.....#   <- sides
+Row 2: #.#.#.#   <- eyes
+Row 3: #.....#   <- middle
+Row 4: #.###.#   <- mouth
+Row 5: #.....#   <- sides  
+Row 6: .#####.   <- bottom
+Grid: .#####.\n#.....#\n#.#.#.#\n#.....#\n#.###.#\n#.....#\n.#####.
+
+### Drawing Patterns Workflow
+1. cheat_mode_enable
+2. cheat_warp Farm (or desired location)
+3. cheat_clear_debris (remove obstacles)  
+4. **DO NOT call cheat_hoe_all** - go directly to pattern!
+5. Design your ASCII grid for the shape
+6. cheat_hoe_custom_pattern grid="your_grid_here"
+
+### When to Use Cheats
+- For rapid testing or speedrunning specific goals
+- When exploring content without survival constraints
+- When the user explicitly requests "cheat", "instant", or "god mode"
+- When time-sensitive goals would otherwise be impossible
+
+### Cheat Strategy
+1. Enable cheat mode first: cheat_mode_enable
+2. Consider enabling time freeze and infinite energy for stress-free gameplay
+3. Use warp for instant travel instead of walking
+4. Use instant_mine for quick resource gathering in mines
+5. Use max_all_friendships if relationship goals are needed quickly
+
+### Full Farm Setup Workflow (Example)
+1. cheat_mode_enable
+2. cheat_time_freeze (stop time)
+3. cheat_infinite_energy
+4. cheat_warp Farm
+5. cheat_clear_debris (remove weeds/stones/twigs)
+6. cheat_cut_trees (clear all trees)
+7. cheat_mine_rocks (clear boulders)
+8. cheat_hoe_all (till the ground)
+9. cheat_fertilize_all (apply fertilizer)
+10. cheat_plant_seeds with seedId "472" (plant parsnips) or "479" (melons)
+11. cheat_grow_crops (instant growth)
+12. cheat_harvest_all (collect everything)
+
+## Seed IDs by Season
+
+### Spring Seeds
+- 472: Parsnip Seeds
+- 474: Cauliflower Seeds  
+- 476: Potato Seeds
+- 427: Tulip Bulb
+- 429: Jazz Seeds
+- 477: Kale Seeds
+- 745: Strawberry Seeds (Festival only)
+
+### Summer Seeds
+- 479: Melon Seeds
+- 480: Tomato Seeds
+- 482: Pepper Seeds
+- 483: Wheat Seeds
+- 484: Radish Seeds
+- 485: Red Cabbage Seeds
+- 486: Starfruit Seeds
+- 481: Blueberry Seeds
+- 302: Hops Starter
+- 453: Poppy Seeds
+- 455: Spangle Seeds
+- 431: Sunflower Seeds
+
+### Fall Seeds
+- 487: Corn Seeds (also summer)
+- 488: Eggplant Seeds
+- 490: Pumpkin Seeds
+- 299: Amaranth Seeds
+- 301: Grape Starter
+- 489: Artichoke Seeds
+- 491: Bok Choy Seeds
+- 492: Yam Seeds
+- 493: Cranberry Seeds
+- 494: Beet Seeds
+- 425: Fairy Seeds
+
+### Multi-Season
+- 433: Coffee Bean (Spring + Summer)
+- 745: Ancient Seeds (Spring, Summer, Fall)
 `
 
 // StardewAgent manages the autonomous AI session using GitHub Copilot SDK
@@ -170,16 +361,448 @@ func (a *StardewAgent) StartSession(initialGoal string) error {
 			return a.clearTarget(params.TargetType)
 		})
 
-	// Create session with tools
+	// ========== CHEAT MODE TOOLS ==========
+	// These tools require cheat_mode_enable to be called first
+
+	cheatEnableTool := copilot.DefineTool("cheat_mode_enable", "Enable cheat mode. Required before using other cheat commands.",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_mode_enable")
+			resp, _ := gameClient.SendCommand("cheat_mode_enable", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatDisableTool := copilot.DefineTool("cheat_mode_disable", "Disable cheat mode",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_mode_disable")
+			resp, _ := gameClient.SendCommand("cheat_mode_disable", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatWarpTool := copilot.DefineTool("cheat_warp", "Instantly teleport to any location (Farm, Town, Mountain, Beach, Forest, Mine, etc.)",
+		func(params CheatWarpParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_warp -> %s", params.Location)
+			p := map[string]interface{}{"location": params.Location}
+			if params.X != 0 {
+				p["x"] = params.X
+			}
+			if params.Y != 0 {
+				p["y"] = params.Y
+			}
+			resp, _ := gameClient.SendCommand("cheat_warp", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatSetMoneyTool := copilot.DefineTool("cheat_set_money", "Set player's gold amount",
+		func(params CheatSetMoneyParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_set_money", map[string]interface{}{"amount": params.Amount})
+			return resp.Message, nil
+		})
+
+	cheatAddItemTool := copilot.DefineTool("cheat_add_item", "Add any item to inventory by ID (e.g., '(O)465' for seeds)",
+		func(params CheatAddItemParams, inv copilot.ToolInvocation) (string, error) {
+			p := map[string]interface{}{"itemId": params.ItemID}
+			if params.Count > 0 {
+				p["count"] = params.Count
+			}
+			if params.Quality > 0 {
+				p["quality"] = params.Quality
+			}
+			resp, _ := gameClient.SendCommand("cheat_add_item", p)
+			return resp.Message, nil
+		})
+
+	cheatSetEnergyTool := copilot.DefineTool("cheat_set_energy", "Restore stamina to max (or specific amount)",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_set_energy", nil)
+			return resp.Message, nil
+		})
+
+	cheatSetHealthTool := copilot.DefineTool("cheat_set_health", "Restore health to max (or specific amount)",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_set_health", nil)
+			return resp.Message, nil
+		})
+
+	cheatSetFriendshipTool := copilot.DefineTool("cheat_set_friendship", "Instantly set friendship with any NPC (hearts or points)",
+		func(params CheatSetFriendshipParams, inv copilot.ToolInvocation) (string, error) {
+			p := map[string]interface{}{"npcName": params.NPCName}
+			if params.Hearts > 0 {
+				p["hearts"] = params.Hearts
+			} else if params.Points > 0 {
+				p["points"] = params.Points
+			} else {
+				p["hearts"] = 10 // default to max
+			}
+			resp, _ := gameClient.SendCommand("cheat_set_friendship", p)
+			return resp.Message, nil
+		})
+
+	cheatMaxFriendshipsTool := copilot.DefineTool("cheat_max_all_friendships", "Max out friendship with ALL NPCs at once",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_max_all_friendships", nil)
+			return resp.Message, nil
+		})
+
+	cheatHarvestAllTool := copilot.DefineTool("cheat_harvest_all", "Instantly harvest all ready crops in current location",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_harvest_all")
+			resp, _ := gameClient.SendCommand("cheat_harvest_all", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatWaterAllTool := copilot.DefineTool("cheat_water_all", "Instantly water all soil in current location",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_water_all")
+			resp, _ := gameClient.SendCommand("cheat_water_all", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatGrowCropsTool := copilot.DefineTool("cheat_grow_crops", "Instantly grow all crops to harvest-ready",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_grow_crops")
+			resp, _ := gameClient.SendCommand("cheat_grow_crops", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatClearDebrisTool := copilot.DefineTool("cheat_clear_debris", "Remove all weeds, stones, twigs, grass in current location",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_clear_debris")
+			resp, _ := gameClient.SendCommand("cheat_clear_debris", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatMineWarpTool := copilot.DefineTool("cheat_mine_warp", "Warp directly to specific mine level (1-120 Mines, 121+ Skull Cavern)",
+		func(params CheatMineWarpParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_mine_warp -> level %d", params.Level)
+			resp, _ := gameClient.SendCommand("cheat_mine_warp", map[string]interface{}{"level": params.Level})
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatSpawnOresTool := copilot.DefineTool("cheat_spawn_ores", "Add ores directly to inventory (copper, iron, gold, iridium, coal)",
+		func(params CheatSpawnOresParams, inv copilot.ToolInvocation) (string, error) {
+			p := map[string]interface{}{"oreType": params.OreType}
+			if params.Count > 0 {
+				p["count"] = params.Count
+			}
+			resp, _ := gameClient.SendCommand("cheat_spawn_ores", p)
+			return resp.Message, nil
+		})
+
+	cheatCollectForageTool := copilot.DefineTool("cheat_collect_all_forage", "Instantly collect all forage items in current location",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_collect_all_forage", nil)
+			return resp.Message, nil
+		})
+
+	cheatInstantMineTool := copilot.DefineTool("cheat_instant_mine", "Mine ALL ore nodes in current mine level instantly",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_instant_mine", nil)
+			return resp.Message, nil
+		})
+
+	cheatTimeSetTool := copilot.DefineTool("cheat_time_set", "Set the game time (600=6AM, 1200=noon, 1800=6PM, 2400=midnight)",
+		func(params CheatTimeSetParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_time_set", map[string]interface{}{"time": params.Time})
+			return resp.Message, nil
+		})
+
+	cheatTimeFreezeTool := copilot.DefineTool("cheat_time_freeze", "Toggle time freeze on/off",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			resp, _ := gameClient.SendCommand("cheat_time_freeze", nil)
+			return resp.Message, nil
+		})
+
+	cheatInfiniteEnergyTool := copilot.DefineTool("cheat_infinite_energy", "Toggle infinite stamina on/off",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_infinite_energy")
+			resp, _ := gameClient.SendCommand("cheat_infinite_energy", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatUnlockRecipesTool := copilot.DefineTool("cheat_unlock_recipes", "Unlock ALL crafting and cooking recipes",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_unlock_recipes")
+			resp, _ := gameClient.SendCommand("cheat_unlock_recipes", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatPetAnimalsTool := copilot.DefineTool("cheat_pet_all_animals", "Pet ALL farm animals instantly",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_pet_all_animals")
+			resp, _ := gameClient.SendCommand("cheat_pet_all_animals", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatCompleteQuestTool := copilot.DefineTool("cheat_complete_quest", "Complete active quests instantly",
+		func(params CheatCompleteQuestParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_complete_quest")
+			p := map[string]interface{}{}
+			if params.QuestID != "" {
+				p["questId"] = params.QuestID
+			}
+			resp, _ := gameClient.SendCommand("cheat_complete_quest", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatGiveGiftTool := copilot.DefineTool("cheat_give_gift", "Give a gift to an NPC instantly (for friendship)",
+		func(params CheatGiveGiftParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_give_gift -> %s", params.NPCName)
+			resp, _ := gameClient.SendCommand("cheat_give_gift", map[string]interface{}{
+				"npcName": params.NPCName,
+				"itemId":  params.ItemID,
+			})
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	// ========== NEW FARMING CHEAT TOOLS ==========
+
+	cheatHoeAllTool := copilot.DefineTool("cheat_hoe_all", "Instantly hoe/till all diggable tiles in current location",
+		func(params CheatHoeAllParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_hoe_all")
+			p := map[string]interface{}{}
+			if params.Radius > 0 {
+				p["radius"] = params.Radius
+			}
+			resp, _ := gameClient.SendCommand("cheat_hoe_all", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatCutTreesTool := copilot.DefineTool("cheat_cut_trees", "Instantly cut/chop ALL trees in current location, collect wood/hardwood",
+		func(params CheatCutTreesParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_cut_trees")
+			p := map[string]interface{}{}
+			if !params.IncludeStumps {
+				p["includeStumps"] = "false"
+			}
+			resp, _ := gameClient.SendCommand("cheat_cut_trees", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatMineRocksTool := copilot.DefineTool("cheat_mine_rocks", "Instantly mine ALL rocks/stones/boulders in current location, collect ores",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_mine_rocks")
+			resp, _ := gameClient.SendCommand("cheat_mine_rocks", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatDigArtifactsTool := copilot.DefineTool("cheat_dig_artifacts", "Instantly dig up ALL artifact spots in current location",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_dig_artifacts")
+			resp, _ := gameClient.SendCommand("cheat_dig_artifacts", nil)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatPlantSeedsTool := copilot.DefineTool("cheat_plant_seeds", "Instantly plant seeds on ALL empty hoed tiles",
+		func(params CheatPlantSeedsParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_plant_seeds -> %s", params.SeedID)
+			resp, _ := gameClient.SendCommand("cheat_plant_seeds", map[string]interface{}{
+				"seedId": params.SeedID,
+			})
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatFertilizeAllTool := copilot.DefineTool("cheat_fertilize_all", "Apply fertilizer to ALL hoed tiles",
+		func(params CheatFertilizeAllParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_fertilize_all")
+			p := map[string]interface{}{}
+			if params.FertilizerID != "" {
+				p["fertilizerId"] = params.FertilizerID
+			}
+			resp, _ := gameClient.SendCommand("cheat_fertilize_all", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	// Inventory & upgrade cheat tools
+	cheatUpgradeBackpackTool := copilot.DefineTool("cheat_upgrade_backpack", "Upgrade backpack to larger size (12, 24, or 36 slots). Default: 36 (max)",
+		func(params CheatUpgradeBackpackParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_upgrade_backpack -> size=%d", params.Size)
+			p := map[string]interface{}{}
+			if params.Size > 0 {
+				p["size"] = params.Size
+			}
+			resp, _ := gameClient.SendCommand("cheat_upgrade_backpack", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatUpgradeToolTool := copilot.DefineTool("cheat_upgrade_tool", "Upgrade a specific tool to higher level. Levels: 0=Basic, 1=Copper, 2=Steel, 3=Gold, 4=Iridium",
+		func(params CheatUpgradeToolParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_upgrade_tool -> %s level=%d", params.Tool, params.Level)
+			p := map[string]interface{}{
+				"tool": params.Tool,
+			}
+			if params.Level >= 0 {
+				p["level"] = params.Level
+			}
+			resp, _ := gameClient.SendCommand("cheat_upgrade_tool", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatUpgradeAllToolsTool := copilot.DefineTool("cheat_upgrade_all_tools", "Upgrade ALL tools to specified level. Default: 4 (Iridium)",
+		func(params CheatUpgradeAllToolsParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_upgrade_all_tools -> level=%d", params.Level)
+			p := map[string]interface{}{}
+			if params.Level >= 0 {
+				p["level"] = params.Level
+			}
+			resp, _ := gameClient.SendCommand("cheat_upgrade_all_tools", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatUnlockAllTool := copilot.DefineTool("cheat_unlock_all", "UNLOCK EVERYTHING: Max backpack, all tools to iridium, all recipes, all skills to level 10, all special items",
+		func(params NoParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_unlock_all")
+			resp, _ := gameClient.SendCommand("cheat_unlock_all", map[string]interface{}{})
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	// ========== TARGETED/SELECTIVE CHEAT TOOLS (for precise control like drawing shapes) ==========
+
+	cheatHoeTilesTool := copilot.DefineTool("cheat_hoe_tiles", "Hoe SPECIFIC tiles by coordinates. Perfect for drawing shapes/patterns. Use tiles='x,y;x,y' format or single x,y params.",
+		func(params CheatHoeTilesParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_hoe_tiles tiles=%s x=%d y=%d", params.Tiles, params.X, params.Y)
+			p := map[string]interface{}{}
+			if params.Tiles != "" {
+				p["tiles"] = params.Tiles
+			}
+			if params.X != 0 || params.Y != 0 {
+				p["x"] = params.X
+				p["y"] = params.Y
+			}
+			resp, _ := gameClient.SendCommand("cheat_hoe_tiles", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	cheatClearTilesTool := copilot.DefineTool("cheat_clear_tiles", "Clear SPECIFIC tiles (objects, terrain, hoed dirt). Use tiles='x,y;x,y' format or single x,y params.",
+		func(params CheatClearTilesParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_clear_tiles tiles=%s x=%d y=%d", params.Tiles, params.X, params.Y)
+			p := map[string]interface{}{}
+			if params.Tiles != "" {
+				p["tiles"] = params.Tiles
+			}
+			if params.X != 0 || params.Y != 0 {
+				p["x"] = params.X
+				p["y"] = params.Y
+			}
+			// Only include these if explicitly set to false
+			if !params.ClearObjects {
+				p["clearObjects"] = "false"
+			}
+			if !params.ClearFeatures {
+				p["clearFeatures"] = "false"
+			}
+			if !params.ClearDirt {
+				p["clearDirt"] = "false"
+			}
+			resp, _ := gameClient.SendCommand("cheat_clear_tiles", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	// cheatTillPatternTool removed - AI should design its own patterns using cheatHoeCustomPatternTool
+	// The preset patterns were too rigid; letting the AI think about tiles produces better results
+	_ = copilot.DefineTool("cheat_till_pattern_UNUSED", "UNUSED",
+		func(params CheatTillPatternParams, inv copilot.ToolInvocation) (string, error) {
+			return "This tool is disabled", nil
+		})
+
+	cheatHoeCustomPatternTool := copilot.DefineTool("cheat_hoe_custom_pattern",
+		`Draw ANY shape/pattern by hoeing specific tiles. YOU must design the pattern!
+
+HOW TO USE:
+1. Think about what shape you want (heart, star, letter, etc.)
+2. Design it as an ASCII grid where '#' = hoe this tile, '.' = skip
+3. Pass the grid string with \n for newlines
+
+EXAMPLE - Heart shape:
+grid=".##.##.\n#######\n#######\n.#####.\n..###..\n...#..."
+
+EXAMPLE - Letter A:
+grid="..#..\n.#.#.\n#####\n#...#\n#...#"
+
+EXAMPLE - Star:
+grid="..#..\n..#..\n#####\n.#.#.\n#...#"
+
+The pattern will be centered at your position (or x,y if specified).
+Surrounding area is auto-cleared so pattern is visible.`,
+		func(params CheatHoeCustomPatternParams, inv copilot.ToolInvocation) (string, error) {
+			log.Printf("[TOOL CALL] cheat_hoe_custom_pattern x=%d y=%d grid=%q offsets=%q clearArea=%v",
+				params.X, params.Y, params.Grid, params.OffsetString, params.ClearArea)
+			p := map[string]interface{}{}
+			if params.X != 0 {
+				p["x"] = params.X
+			}
+			if params.Y != 0 {
+				p["y"] = params.Y
+			}
+			if params.Grid != "" {
+				p["grid"] = params.Grid
+			}
+			if params.OffsetString != "" {
+				p["offsetString"] = params.OffsetString
+			}
+			if params.ClearRadius > 0 {
+				p["clearRadius"] = params.ClearRadius
+			}
+			// clearArea defaults to true, only send if explicitly false
+			if !params.ClearArea {
+				p["clearArea"] = "false"
+			}
+			resp, _ := gameClient.SendCommand("cheat_hoe_custom_pattern", p)
+			log.Printf("[TOOL RESULT] %s", resp.Message)
+			return resp.Message, nil
+		})
+
+	// Create session with tools (using embedded knowledge)
 	session, err := a.client.CreateSession(&copilot.SessionConfig{
-		Model: "claude-4-5-sonnet",
+		Model: "gpt-4.1",
 		SystemMessage: &copilot.SystemMessageConfig{
 			Content: gameKnowledge,
 		},
 		Tools: []copilot.Tool{
+			// Standard gameplay tools
 			moveToTool, getSurroundingsTool, interactTool, useToolTool,
 			useToolRepeatTool, faceDirectionTool, selectItemTool, switchToolTool,
 			eatItemTool, enterDoorTool, findBestTargetTool, clearTargetTool,
+			// Cheat mode tools
+			cheatEnableTool, cheatDisableTool, cheatWarpTool, cheatSetMoneyTool,
+			cheatAddItemTool, cheatSetEnergyTool, cheatSetHealthTool,
+			cheatSetFriendshipTool, cheatMaxFriendshipsTool,
+			cheatHarvestAllTool, cheatWaterAllTool, cheatGrowCropsTool, cheatClearDebrisTool,
+			cheatMineWarpTool, cheatSpawnOresTool, cheatCollectForageTool, cheatInstantMineTool,
+			cheatTimeSetTool, cheatTimeFreezeTool, cheatInfiniteEnergyTool,
+			cheatUnlockRecipesTool, cheatPetAnimalsTool, cheatCompleteQuestTool, cheatGiveGiftTool,
+			// New farming cheat tools
+			cheatHoeAllTool, cheatCutTreesTool, cheatMineRocksTool, cheatDigArtifactsTool,
+			cheatPlantSeedsTool, cheatFertilizeAllTool,
+			// Inventory & upgrade cheat tools
+			cheatUpgradeBackpackTool, cheatUpgradeToolTool, cheatUpgradeAllToolsTool, cheatUnlockAllTool,
+			// Targeted/selective cheat tools (for precise control like drawing shapes)
+			cheatHoeTilesTool, cheatClearTilesTool, cheatHoeCustomPatternTool,
+			// Note: cheatTillPatternTool removed - AI should design its own patterns using cheatHoeCustomPatternTool
 		},
 	})
 	if err != nil {
@@ -194,13 +817,21 @@ func (a *StardewAgent) StartSession(initialGoal string) error {
 func (a *StardewAgent) runAutonomousLoop(goal string) {
 	a.currentPlan = "Initializing..."
 	consecutiveErrors := 0
-	lastPosition := ""
+	goalCompleted := false
 	iteration := 0
 
 	log.Printf("[AGENT LOOP] Starting autonomous loop...")
 
 	for {
 		iteration++
+
+		// Stop if goal was completed
+		if goalCompleted {
+			log.Printf("[AGENT LOOP] Goal completed! Stopping autonomous loop.")
+			time.Sleep(30 * time.Second) // Wait before potentially starting new goal
+			goalCompleted = false        // Reset for next iteration
+		}
+
 		log.Printf("[AGENT LOOP] Iteration %d - Getting game state...", iteration)
 
 		state := gameClient.GetState()
@@ -219,13 +850,6 @@ func (a *StardewAgent) runAutonomousLoop(goal string) {
 		log.Printf("[AGENT LOOP] Got state: %s at (%d,%d), Energy: %.0f, CanMove: %v, IsMoving: %v",
 			state.Player.Location, int(state.Player.X), int(state.Player.Y),
 			state.Player.Energy, state.Player.CanMove, state.Player.IsMoving)
-
-		// Track if stuck
-		currentPosition := fmt.Sprintf("%d,%d", int(state.Player.X), int(state.Player.Y))
-		if currentPosition == lastPosition {
-			a.currentPlan = "Stuck at same position - finding new approach"
-		}
-		lastPosition = currentPosition
 
 		// Determine active goal
 		activeGoal := goal
@@ -260,25 +884,52 @@ func (a *StardewAgent) runAutonomousLoop(goal string) {
 
 		gameContext := a.formatGameStateContext(state)
 
-		prompt := fmt.Sprintf(`Location: %s | Pos: (%d,%d) | Time: %s | Energy: %.0f/%d
+		// Get season-appropriate seed suggestions (use numeric IDs only, not (O) prefix)
+		seasonSeeds := map[string]string{
+			"spring": "472 (Parsnip), 474 (Cauliflower), 476 (Potato)",
+			"summer": "479 (Melon), 480 (Tomato), 482 (Pepper)",
+			"fall":   "487 (Corn), 488 (Eggplant), 490 (Pumpkin)",
+			"winter": "No outdoor crops - use greenhouse only",
+		}
+		seedSuggestion := seasonSeeds[state.Time.Season]
+		if seedSuggestion == "" {
+			seedSuggestion = "472 (Parsnip)"
+		}
+
+		// Clear prompt - execute ALL steps in ONE call, then STOP
+		prompt := fmt.Sprintf(`Location: %s | Pos: (%d,%d) | Season: %s | Time: %s | Energy: %.0f/%d
 %s
 
 GOAL: %s
 
-%s
+SEASON INFO: Current season is %s. Valid seeds: %s
 
-Use clear_target to efficiently clear debris. Call it with target_type="debris" to find and clear the nearest debris automatically.`,
+CRITICAL EXECUTION ORDER - These tools have dependencies and MUST be called SEQUENTIALLY (one at a time, waiting for each to complete):
+1. cheat_mode_enable (FIRST - enables all other cheats)
+2. cheat_clear_debris, cheat_cut_trees, cheat_mine_rocks (can be parallel - clearing the land)
+3. cheat_hoe_all (MUST complete before planting - creates hoed tiles)
+4. cheat_plant_seeds (MUST run AFTER hoe_all completes - needs hoed tiles to exist)
+5. cheat_grow_crops (MUST run AFTER plant_seeds - needs crops to exist)
+6. cheat_harvest_all (MUST run AFTER grow_crops - needs mature crops)
+
+DO NOT call plant_seeds, grow_crops, or harvest_all in parallel - they depend on each other!
+After ALL tools complete successfully, respond with "GOAL COMPLETE".`,
 			state.Player.Location, int(state.Player.X), int(state.Player.Y),
-			state.Time.TimeString, state.Player.Energy, state.Player.MaxEnergy,
+			state.Time.Season, state.Time.TimeString, state.Player.Energy, state.Player.MaxEnergy,
 			urgency,
 			activeGoal,
-			gameContext)
+			state.Time.Season, seedSuggestion)
+
+		// Only include game context if not using cheats
+		if !strings.Contains(strings.ToLower(activeGoal), "cheat") {
+			prompt += "\n\n" + gameContext
+		}
 
 		// Send message and wait for response
-		log.Printf("[AGENT LOOP] Sending prompt to Copilot CLI (timeout: 60s)...")
+		log.Printf("[AGENT LOOP] Sending prompt (%d chars) to Copilot...", len(prompt))
 		response, err := a.session.SendAndWait(copilot.MessageOptions{
 			Prompt: prompt,
-		}, 0) // 0 means default 60s timeout
+		}, 120*time.Second) // 120 second timeout for complex cheat operations
 		if err != nil {
 			log.Printf("[AGENT AGENT] SendAndWait error: %v", err)
 			time.Sleep(5 * time.Second)
@@ -286,12 +937,23 @@ Use clear_target to efficiently clear debris. Call it with target_type="debris" 
 		}
 		log.Printf("[AGENT LOOP] Got response from Copilot")
 
-		// Log the response
+		// Log the response and check for goal completion
 		if response != nil && response.Data.Content != nil {
 			thought := strings.TrimSpace(*response.Data.Content)
 			if thought != "" {
 				log.Printf("[AGENT THOUGHT] %s", thought)
 			}
+
+			// Check for goal completion signal
+			thoughtUpper := strings.ToUpper(thought)
+			if strings.Contains(thoughtUpper, "GOAL COMPLETE") ||
+				strings.Contains(thoughtUpper, "GOAL COMPLETED") ||
+				strings.Contains(thoughtUpper, "ALL TASKS COMPLETE") ||
+				strings.Contains(thoughtUpper, "MISSION ACCOMPLISHED") {
+				log.Printf("[AGENT LOOP] Goal completion detected!")
+				goalCompleted = true
+			}
+
 			if strings.Contains(thought, "PLAN:") {
 				parts := strings.SplitN(thought, "PLAN:", 2)
 				if len(parts) > 1 {
@@ -320,7 +982,10 @@ type MoveToParams struct {
 	Y int `json:"y" jsonschema:"Target tile Y coordinate"`
 }
 
-type NoParams struct{}
+type NoParams struct {
+	// Dummy field required for Gemini schema validation
+	Unused string `json:"_unused,omitempty" jsonschema:"Ignore this parameter"`
+}
 
 type CountParams struct {
 	Count int `json:"count" jsonschema:"Number of times to use the tool (1-100)"`
@@ -340,6 +1005,115 @@ type TargetTypeParams struct {
 
 type SlotParams struct {
 	Slot int `json:"slot" jsonschema:"Inventory slot number"`
+}
+
+// Cheat mode parameter structs
+type CheatWarpParams struct {
+	Location string `json:"location" jsonschema:"Location name (Farm, Town, Mountain, Beach, Forest, Mine, etc.)"`
+	X        int    `json:"x,omitempty" jsonschema:"Optional X coordinate"`
+	Y        int    `json:"y,omitempty" jsonschema:"Optional Y coordinate"`
+}
+
+type CheatSetMoneyParams struct {
+	Amount int `json:"amount" jsonschema:"Amount of gold to set"`
+}
+
+type CheatAddItemParams struct {
+	ItemID  string `json:"itemId" jsonschema:"Item ID (e.g., '(O)465' for Parsnip Seeds, '(T)Pickaxe' for tools)"`
+	Count   int    `json:"count,omitempty" jsonschema:"Number of items (default 1)"`
+	Quality int    `json:"quality,omitempty" jsonschema:"Quality (0=normal, 1=silver, 2=gold, 4=iridium)"`
+}
+
+type CheatSetFriendshipParams struct {
+	NPCName string `json:"npcName" jsonschema:"NPC name (e.g., Abigail, Sebastian)"`
+	Hearts  int    `json:"hearts,omitempty" jsonschema:"Friendship hearts (0-14, default 10)"`
+	Points  int    `json:"points,omitempty" jsonschema:"Friendship points (250 per heart)"`
+}
+
+type CheatMineWarpParams struct {
+	Level int `json:"level" jsonschema:"Mine level (1-120 for Mines, 121+ for Skull Cavern, 77377 for Quarry)"`
+}
+
+type CheatSpawnOresParams struct {
+	OreType string `json:"oreType" jsonschema:"Type of ore (copper, iron, gold, iridium, coal)"`
+	Count   int    `json:"count,omitempty" jsonschema:"Number of ores (default 10)"`
+}
+
+type CheatTimeSetParams struct {
+	Time int `json:"time" jsonschema:"Time in 24-hour format (600=6AM, 1800=6PM, 2600=2AM)"`
+}
+
+type CheatGiveGiftParams struct {
+	NPCName string `json:"npcName" jsonschema:"NPC name to give gift to"`
+	ItemID  string `json:"itemId" jsonschema:"Item ID to give as gift"`
+}
+
+type CheatCompleteQuestParams struct {
+	QuestID string `json:"questId,omitempty" jsonschema:"Quest ID or name to complete (omit to complete all)"`
+}
+
+type CheatHoeAllParams struct {
+	Radius int `json:"radius,omitempty" jsonschema:"Radius around player to hoe (default 50)"`
+}
+
+type CheatCutTreesParams struct {
+	IncludeStumps bool `json:"includeStumps,omitempty" jsonschema:"Whether to include tree stumps (default true)"`
+}
+
+type CheatPlantSeedsParams struct {
+	SeedID string `json:"seedId" jsonschema:"Seed ID to plant (e.g., '(O)472' for Parsnip Seeds)"`
+}
+
+type CheatFertilizeAllParams struct {
+	FertilizerID string `json:"fertilizerId,omitempty" jsonschema:"Fertilizer ID (default Quality Fertilizer)"`
+}
+
+type CheatUpgradeBackpackParams struct {
+	Size int `json:"size,omitempty" jsonschema:"Backpack size: 12, 24, or 36 (default 36)"`
+}
+
+type CheatUpgradeToolParams struct {
+	Tool  string `json:"tool" jsonschema:"Tool name: Hoe, Pickaxe, Axe, WateringCan, FishingRod, or Trash Can"`
+	Level int    `json:"level,omitempty" jsonschema:"Upgrade level: 0=Basic, 1=Copper, 2=Steel, 3=Gold, 4=Iridium (default 4)"`
+}
+
+type CheatUpgradeAllToolsParams struct {
+	Level int `json:"level,omitempty" jsonschema:"Upgrade level: 0=Basic, 1=Copper, 2=Steel, 3=Gold, 4=Iridium (default 4)"`
+}
+
+// Targeted/selective cheat params (for precise control like drawing shapes)
+type CheatHoeTilesParams struct {
+	Tiles string `json:"tiles,omitempty" jsonschema:"Tile coordinates as 'x,y;x,y;x,y' format OR use x/y arrays"`
+	X     int    `json:"x,omitempty" jsonschema:"Single tile X coordinate (use with y for one tile)"`
+	Y     int    `json:"y,omitempty" jsonschema:"Single tile Y coordinate (use with x for one tile)"`
+}
+
+type CheatClearTilesParams struct {
+	Tiles         string `json:"tiles,omitempty" jsonschema:"Tile coordinates as 'x,y;x,y;x,y' format OR use x/y arrays"`
+	X             int    `json:"x,omitempty" jsonschema:"Single tile X coordinate"`
+	Y             int    `json:"y,omitempty" jsonschema:"Single tile Y coordinate"`
+	ClearObjects  bool   `json:"clearObjects,omitempty" jsonschema:"Clear objects like debris, stones (default true)"`
+	ClearFeatures bool   `json:"clearFeatures,omitempty" jsonschema:"Clear terrain features like grass, trees (default true)"`
+	ClearDirt     bool   `json:"clearDirt,omitempty" jsonschema:"Clear hoed dirt (default true)"`
+}
+
+type CheatTillPatternParams struct {
+	Pattern     string `json:"pattern" jsonschema:"Pattern to draw: heart, circle, square, filled_square, line, cross, star, diamond, smiley, spiral, arrow"`
+	X           int    `json:"x,omitempty" jsonschema:"Center X coordinate (default: player position)"`
+	Y           int    `json:"y,omitempty" jsonschema:"Center Y coordinate (default: player position)"`
+	Size        int    `json:"size,omitempty" jsonschema:"Size/scale of pattern (default 5, max 50)"`
+	Direction   string `json:"direction,omitempty" jsonschema:"Direction for line/arrow patterns: up, down, left, right, ne, nw, se, sw (default: up)"`
+	ClearArea   bool   `json:"clearArea,omitempty" jsonschema:"Clear surrounding hoed dirt to make pattern visible (default true)"`
+	ClearRadius int    `json:"clearRadius,omitempty" jsonschema:"Radius around pattern to clear (default: size*2+5)"`
+}
+
+type CheatHoeCustomPatternParams struct {
+	X            int    `json:"x,omitempty" jsonschema:"Center X coordinate (default: player position)"`
+	Y            int    `json:"y,omitempty" jsonschema:"Center Y coordinate (default: player position)"`
+	Grid         string `json:"grid,omitempty" jsonschema:"ASCII art grid where # or X marks tiles to hoe. Use \\n for newlines. Example: '..#..\\n.###.\\n#####\\n.###.\\n..#..' for diamond"`
+	OffsetString string `json:"offsetString,omitempty" jsonschema:"Relative offsets as 'dx,dy;dx,dy'. Example: '0,0;1,0;-1,0;0,1;0,-1' for a cross"`
+	ClearArea    bool   `json:"clearArea,omitempty" jsonschema:"Clear surrounding hoed dirt to make pattern visible (default true)"`
+	ClearRadius  int    `json:"clearRadius,omitempty" jsonschema:"Radius around pattern to clear (default: pattern size + 5)"`
 }
 
 // TargetInfo contains all info needed to clear a target

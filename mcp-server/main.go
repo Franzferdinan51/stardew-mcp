@@ -509,7 +509,12 @@ func (c *GameClient) SendCommand(action string, params map[string]interface{}) (
 
 func main() {
 	autoFlag := flag.Bool("auto", true, "Start in autonomous mode")
-	goalFlag := flag.String("goal", "Clear the farm of debris and weeds.", "Goal for autonomous mode")
+	goalFlag := flag.String("goal", `USE CHEAT MODE to setup the farm:
+1. cheat_mode_enable first
+3. cheat_clear_debris, cheat_cut_trees, cheat_mine_rocks
+4. cheat_hoe_all to till soil
+5. cheat_plant_seeds season appropriate seeds"
+6. cheat_grow_crops then cheat_harvest_all`, "Goal for autonomous mode")
 	urlFlag := flag.String("url", "ws://localhost:8765/game", "WebSocket URL for the game mod")
 	flag.Parse()
 
