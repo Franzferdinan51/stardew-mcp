@@ -4,19 +4,36 @@ A hybrid AI-controlled game mod that bridges Stardew Valley with AI assistants v
 
 ## Quick Start
 
-### Windows
+### Windows (One Command!)
 ```cmd
 cd setup
-setup.bat
-run.bat
+quick-start.bat
 ```
+
+This builds everything AND installs the mod automatically!
 
 ### Linux/Mac
 ```bash
 cd setup
 chmod +x *.sh
-./setup.sh
-./run.sh
+./quick-start.sh
+```
+
+### Individual Steps (Windows)
+```cmd
+cd setup
+setup.bat          # Build Go server only
+install-mod.bat    # Build and install C# mod only
+run.bat            # Run the MCP server
+```
+
+### Individual Steps (Linux/Mac)
+```bash
+cd setup
+chmod +x *.sh
+./setup.sh         # Build Go server only
+./install-mod.sh   # Build and install C# mod only
+./run.sh           # Run the MCP server
 ```
 
 ## Usage Modes
