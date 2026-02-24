@@ -11,6 +11,17 @@ server:
   # Log level: debug, info, warn, error
   log_level: "info"
 
+  # Connection settings
+  connection:
+    # Reconnect delay in seconds
+    reconnect_delay: 5
+
+    # Ping interval in seconds
+    ping_interval: 15
+
+    # Command timeout in seconds
+    command_timeout: 15
+
 # Remote Server Mode - for remote AI agents
 # Run with -server flag to enable
 remote:
@@ -19,6 +30,9 @@ remote:
 
   # Port to listen on for remote connections
   port: 8765
+
+  # Enable CORS for remote connections
+  cors_enabled: true
 
 agent:
   # Default goal when auto_start is enabled
@@ -29,6 +43,20 @@ agent:
 
   # Enable cheat mode by default (optional)
   cheat_mode: false
+
+  # Agent behavior
+  behavior:
+    # Loop interval in seconds
+    loop_interval: 5
+
+    # Max retries for failed commands
+    max_retries: 3
+
+    # Emergency energy threshold
+    emergency_energy: 20
+
+    # Sleep time threshold (game ticks, 100 = 10PM)
+    sleep_threshold: 2200
 
 # OpenClaw Gateway Configuration
 # Run with -openclaw flag to enable
@@ -41,3 +69,6 @@ openclaw:
 
   # Agent name for OpenClaw
   agent_name: "stardew-farmer"
+
+  # Reconnect on disconnect
+  auto_reconnect: true

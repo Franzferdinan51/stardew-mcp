@@ -2,7 +2,7 @@
 
 A hybrid AI-controlled game mod that bridges Stardew Valley with AI assistants via the Model Context Protocol (MCP). Enables autonomous AI agents to control and play Stardew Valley through real-time game state synchronization.
 
-> **Note:** We now have a **TypeScript version** with rs-sdk integration! See below.
+> **Note:** TypeScript version available in `typescript-dev` branch.
 
 ## Quick Start
 
@@ -107,20 +107,7 @@ chmod +x *.sh
 - Go 1.23+
 - GitHub Copilot access (for Claude Sonnet via Copilot SDK)
 
-### For the MCP Server (TypeScript Version)
-- Node.js 18+
-- npm or bun
-
 ## Building
-
-### TypeScript Version
-```bash
-cd mcp-server-ts
-npm install
-npm run build
-```
-
-### Go Version
 
 ### 1. Build the C# Mod
 
