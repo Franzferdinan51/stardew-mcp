@@ -245,6 +245,14 @@ export interface SkillsInfo {
   combatXp: number;
 }
 
+export interface MapInfo {
+  name: string;
+  width: number;
+  height: number;
+  tileWidth: number;
+  tileHeight: number;
+}
+
 export interface Config {
   server: {
     gameUrl: string;
