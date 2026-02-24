@@ -2,6 +2,32 @@
 
 A hybrid AI-controlled game mod that bridges Stardew Valley with AI assistants via the Model Context Protocol (MCP). Enables autonomous AI agents to control and play Stardew Valley through real-time game state synchronization.
 
+## Quick Start
+
+### Windows
+```cmd
+cd setup
+setup.bat
+run.bat
+```
+
+### Linux/Mac
+```bash
+cd setup
+chmod +x *.sh
+./setup.sh
+./run.sh
+```
+
+## Usage Modes
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| Autonomous | `run.bat` / `./run.sh` | AI agent plays automatically |
+| Manual | `run.bat -auto=false` | Connect without AI, send commands manually |
+| Remote | `run-remote.bat` / `./run.sh` | Accept remote agent connections |
+| OpenClaw | `run.bat -openclaw` | Connect to OpenClaw Gateway |
+
 ## Architecture
 
 ```
@@ -96,6 +122,27 @@ cd mcp-server
 ```
 
 The server connects to the game via WebSocket and begins the autonomous AI agent loop.
+
+## Remote Bot Support
+
+You can run the MCP server to accept connections from remote AI agents (even from other computers):
+
+### Host Computer (where Stardew runs):
+```cmd
+cd setup
+setup.bat
+run-remote.bat
+```
+
+The script displays the IP address to connect to:
+```
+ws://YOUR_IP:8765/mcp
+```
+
+### Remote Bot Connection:
+Connect to `ws://HOST_IP:8765/mcp` from any machine.
+
+**Important:** Ensure port 8765 is open in your firewall for remote connections.
 
 ## Available AI Tools
 
@@ -216,6 +263,23 @@ The mod and server communicate via JSON over WebSocket.
 ```
 
 ## Configuration
+
+Edit `mcp-server/config.yaml` to customize:
+- Game WebSocket URL
+- Auto-start behavior
+- Log level
+- Remote server settings (host/port)
+- OpenClaw Gateway settings
+
+**Command-line options:**
+```bash
+./stardew-mcp -server              # Run as remote server
+./stardew-mcp -host "0.0.0.0"     # Host to bind to
+./stardew-mcp -port 8765          # Port to listen on
+./stardew-mcp -auto=false         # Disable autonomous mode
+./stardew-mcp -goal "your goal"   # Set AI goal
+./stardew-mcp -config config.yaml # Custom config file
+```
 
 - **WebSocket Port**: Default `8765` (configured in `WebSocketServer.cs`)
 - **Tool Cooldown**: 30 game ticks between tool swings (~0.5s at 60fps)
