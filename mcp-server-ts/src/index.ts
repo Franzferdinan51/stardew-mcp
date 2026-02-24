@@ -1,11 +1,16 @@
 import { GameClient } from './gameClient';
 import { StardewTools } from './tools';
+import { Bot } from './bot';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'yaml';
 import { createServer, Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { EventEmitter } from 'events';
+
+// Export for users
+export { Bot, GameClient, StardewTools } from './bot';
+export * from './types';
 
 // Load configuration
 interface Config {
