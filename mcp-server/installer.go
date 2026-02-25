@@ -6,366 +6,540 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"time"
 
-	"github.com/rivo/tview"
-)
-
-// Configuration
-var (
-	app           *tview.Application
-	pages         *tview.Pages
-	logView       *tview.TextView
-	stardewPath   string
-	openclawEnabled bool
-	remoteEnabled   bool
-	autoStart      bool
+	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
+	"github.com/charmbracelet/lipgloss"
+	tea "github.com/charmbracelet/charm"
+	"github.com/muesli/termenv"
 )
 
 func main() {
-	app = tview.NewApplication()
-	pages = tview.NewPages()
-	logView = tview.NewTextView().
-		SetDynamicColors(true).
-		SetScrollable(true).
-		SetChangedFunc(func() {
-			app.Draw()
-		})
-
-	showWelcome()
-
-	if err := app.SetRoot(pages, true).Run(); err != nil {
+	tea.InitializeTTY()
+	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	if err := p.Start(); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 }
 
-func log(msg string) {
-	fmt.Fprintf(logView, "%s\n", msg)
-	app.Draw()
+// ============================================================================
+// Styles - Charm/Lip Gloss styling
+// ============================================================================
+
+var (
+	// Color palette
+	primaryColor = lipgloss.Color("86")
+	successColor = lipgloss.Color("82")
+	errorColor   = lipgloss.Color("203")
+	warningColor = lipgloss.Color("226")
+	lobsterColor = lipgloss.Color("196")
+
+	// Styles
+	titleStyle = lipgloss.NewStyle().
+			Foreground(lobsterColor).
+			Bold(true).
+			Padding(0, 1)
+
+	headerStyle = lipgloss.NewStyle().
+			Foreground(primaryColor).
+			Bold(true).
+			Padding(0, 1)
+
+	normalText = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("252"))
+
+	successText = lipgloss.NewStyle().
+			Foreground(successColor)
+
+	errorText = lipgloss.NewStyle().
+			Foreground(errorColor)
+
+	infoText = lipgloss.NewStyle().
+			Foreground(warningColor)
+
+	borderStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder).
+			BorderForeground(primaryColor).
+			Padding(1, 2)
+
+	boxStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.DoubleBorder).
+			BorderForeground(primaryColor).
+			Padding(1, 2)
+
+	buttonStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("15")).
+			Background(primaryColor).
+			Padding(0, 2).
+			Margin(0, 1)
+
+	buttonFocusedStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("15")).
+				Background(lobsterColor).
+				Bold(true).
+				Padding(0, 2).
+				Margin(0, 1)
+
+	progressBar = progress.New(
+		progress.WithGradient("#ff6b6b", "#4ecdc4"),
+		progress.WithoutPercentage(),
+	)
+)
+
+// ============================================================================
+// Model - Bubble Tea Model
+// ============================================================================
+
+type model struct {
+	step           int
+	stardewPath   string
+	openclaw      bool
+	remote        bool
+	autoStart     bool
+
+	// Welcome step
+	choiceSelected int
+
+	// Path step
+	pathInput    textinput.Model
+	pathDetected string
+
+	// Install step
+	spinner       spinner.Model
+	progress      progress.Model
+	logs          viewport.Model
+	logLines      []string
+	installing    bool
+	installError  string
+	installDone   bool
+
+	// Final
+	width  int
+	height int
 }
 
-func logSuccess(msg string) {
-	fmt.Fprintf(logView, "[green]✓ %s[white]\n", msg)
-	app.Draw()
+func initialModel() model {
+	// Setup terminal colors
+	termenv.ColorProfile()
+
+	ti := textinput.New()
+	ti.Placeholder = "/path/to/StardewValley"
+	ti.Focus()
+
+	sp := spinner.New()
+	sp.Spinner = spinner.Meter
+	sp.Style = spinnerStyle()
+
+	logs := viewport.New(60, 10)
+
+	return model{
+		step:         0,
+		stardewPath: detectStardewValley(),
+		choiceSelected: 0,
+		pathInput:    ti,
+		pathDetected: detectStardewValley(),
+		spinner:      sp,
+		progress:     *progressBar,
+		logs:         logs,
+		logLines:     []string{},
+	}
 }
 
-func logError(msg string) {
-	fmt.Fprintf(logView, "[red]✗ %s[white]\n", msg)
-	app.Draw()
-}
-
-func logInfo(msg string) {
-	fmt.Fprintf(logView, "[yellow]ℹ %s[white]\n", msg)
-	app.Draw()
+func spinnerStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(primaryColor)
 }
 
 // ============================================================================
-// Welcome Screen
+// Update - Bubble Tea Update Loop
 // ============================================================================
 
-func showWelcome() {
-	header := tview.NewTextView().
-		SetTextAlign(tview.AlignCenter).
-		SetText(`[yellow]╔══════════════════════════════════════════════╗
-║      🦞 Stardew MCP Installer 🦞               ║
-║         Lobster Edition                       ║
-╚══════════════════════════════════════════════╝[white]`)
-
-	desc := tview.NewTextView().
-		SetTextAlign(tview.AlignCenter).
-		SetText(`This installer will set up everything you need:
- • Build Go MCP Server
- • Build C# Stardew Valley Mod
- • Install mod to your game folder
- • Configure OpenClaw & Remote options`)
-
-	btnInstall := tview.NewButton("[Install Everything]").SetSelectedFunc(func() {
-		showPathDetection()
-	})
-
-	btnExit := tview.NewButton("[Exit]").SetSelectedFunc(func() {
-		app.Stop()
-	})
-
-	buttonBox := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(btnInstall, 0, 1, true).
-		AddItem(btnExit, 0, 1, false)
-
-	menu := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewBox(), 0, 3, false).
-		AddItem(header, 8, 0, false).
-		AddItem(desc, 6, 0, false).
-		AddItem(tview.NewBox(), 0, 1, false).
-		AddItem(buttonBox, 3, 0, false).
-		AddItem(tview.NewBox(), 0, 3, false)
-
-	pages.AddPage("welcome", menu, true, true)
-	pages.SwitchToPage("welcome")
+func (m model) Init() tea.Cmd {
+	return nil
 }
 
-// ============================================================================
-// Path Detection Screen
-// ============================================================================
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 
-func showPathDetection() {
-	stardewPath = detectStardewValley()
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
 
-	header := tview.NewTextView().
-		SetTextAlign(tview.AlignCenter).
-		SetText(`[yellow]Stardew Valley Location[white]
+		case "up", "w":
+			if m.step == 0 && m.choiceSelected > 0 {
+				m.choiceSelected--
+			}
 
-Enter the path where Stardew Valley is installed`)
+		case "down", "s":
+			if m.step == 0 && m.choiceSelected < 2 {
+				m.choiceSelected++
+			}
 
-	pathLabel := tview.NewTextView().
-		SetText(fmt.Sprintf("Auto-detected: [green]%s[white]", stardewPath)).
-		SetTextAlign(tview.AlignCenter)
+		case "enter":
+			switch m.step {
+			case 0: // Welcome - install or exit
+				if m.choiceSelected == 0 {
+					m.step = 1
+					m.pathInput.SetValue(m.stardewPath)
+				} else {
+					return m, tea.Quit
+				}
+			case 1: // Path - proceed or detect
+				// Already handled by separate key handlers
+			case 2: // Options - start install
+				m.step = 3
+				m.installing = true
+				go runInstall(&m)
+			case 3: // Install complete
+				if m.installDone {
+					return m, tea.Quit
+				}
+			}
 
-	inputField := tview.NewInputField().
-		SetLabel("Path: ").
-		SetText(stardewPath).
-		SetFieldWidth(50)
-
-	inputField.SetChangedFunc(func(text string) {
-		stardewPath = text
-		pathLabel.SetText(fmt.Sprintf("Path: [green]%s[white]", text))
-		app.Draw()
-	})
-
-	btnDetect := tview.NewButton("[Auto-Detect]").SetSelectedFunc(func() {
-		stardewPath = detectStardewValley()
-		inputField.SetText(stardewPath)
-		app.Draw()
-	})
-
-	btnNext := tview.NewButton("[Next >]").SetSelectedFunc(func() {
-		if stardewPath == "" || !pathExists(stardewPath) {
-			showErrorModal("Please enter a valid Stardew Valley path")
-			return
+		case "tab":
+			if m.step == 1 {
+				m.stardewPath = m.pathDetected
+				m.pathInput.SetValue(m.stardewPath)
+			}
 		}
-		showOptions()
-	})
 
-	btnBack := tview.NewButton("[< Back]").SetSelectedFunc(func() {
-		showWelcome()
-	})
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 
-	flex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewBox(), 0, 2, false).
-		AddItem(header, 5, 0, false).
-		AddItem(pathLabel, 2, 0, false).
-		AddItem(inputField, 3, 0, false).
-		AddItem(btnDetect, 1, 0, false).
-		AddItem(tview.NewBox(), 0, 1, false).
-		AddItem(btnBack, 1, 0, false).
-		AddItem(btnNext, 1, 0, false).
-		AddItem(tview.NewBox(), 0, 2, false)
+	case spinner.TickMsg:
+		if m.step == 3 && m.installing && !m.installDone && m.installError == "" {
+			m.spinner, _ = m.spinner.Update(msg)
+		}
 
-	pages.AddPage("path", flex, true, true)
-	pages.SwitchToPage("path")
+	case progress.Msg:
+		if m.step == 3 {
+			m.progress, _ = m.progress.Update(msg)
+		}
+	}
+
+	// Handle text input for path
+	if m.step == 1 {
+		m.pathInput, _ = m.pathInput.Update(msg)
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 // ============================================================================
-// Options Screen
+// View - Bubble Tea View
 // ============================================================================
 
-func showOptions() {
-	header := tview.NewTextView().
-		SetTextAlign(tview.AlignCenter).
-		SetText(`[yellow]Additional Options[white]`)
-
-	var openclawCheck, remoteCheck, autoCheck *tview.CheckBox
-
-	openclawCheck = tview.NewCheckBox().SetLabel("Enable OpenClaw Gateway").SetChecked(false)
-	remoteCheck = tview.NewCheckBox().SetLabel("Enable Remote Server Mode").SetChecked(false)
-	autoCheck = tview.NewCheckBox().SetLabel("Auto-start agent on connect").SetChecked(true)
-
-	openclawCheck.SetChangedFunc(func(checked bool) {
-		openclawEnabled = checked
-	})
-
-	remoteCheck.SetChangedFunc(func(checked bool) {
-		remoteEnabled = checked
-	})
-
-	autoCheck.SetChangedFunc(func(checked bool) {
-		autoStart = checked
-	})
-
-	flex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewBox(), 0, 2, false).
-		AddItem(header, 3, 0, false).
-		AddItem(openclawCheck, 1, 0, false).
-		AddItem(remoteCheck, 1, 0, false).
-		AddItem(autoCheck, 1, 0, false).
-		AddItem(tview.NewBox(), 0, 1, false)
-
-	btnInstall := tview.NewButton("[Install Now]").SetSelectedFunc(func() {
-		showInstallProgress()
-	})
-
-	btnBack := tview.NewButton("[< Back]").SetSelectedFunc(func() {
-		showPathDetection()
-	})
-
-	flex.AddItem(btnBack, 1, 0, false).
-		AddItem(btnInstall, 1, 0, false).
-		AddItem(tview.NewBox(), 0, 2, false)
-
-	pages.AddPage("options", flex, true, true)
-	pages.SwitchToPage("options")
+func (m model) View() string {
+	switch m.step {
+	case 0:
+		return m.viewWelcome()
+	case 1:
+		return m.viewPath()
+	case 2:
+		return m.viewOptions()
+	case 3:
+		return m.viewInstall()
+	}
+	return ""
 }
 
-// ============================================================================
-// Installation Progress Screen
-// ============================================================================
+func (m model) viewWelcome() string {
+	title := titleStyle.Render("🦞 Stardew MCP Installer 🦞")
+	subtitle := normalText.Render("Lobster Edition")
 
-func showInstallProgress() {
-	logView.Clear()
+	installBtn := "  [Install Everything]  "
+	exitBtn := "      [Exit]      "
 
-	header := tview.NewTextView().
-		SetTextAlign(tview.AlignCenter).
-		SetText(`[yellow]Installing... Please Wait[white]`)
-
-	logBox := tview.NewFrame(logView).
-		SetBorders(tview.BorderDouble, " ", " ", " ", " ", " ", " ")
-
-	flex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewBox(), 0, 1, false).
-		AddItem(header, 3, 0, false).
-		AddItem(logBox, 0, 8, false).
-		AddItem(tview.NewBox(), 0, 1, false)
-
-	pages.AddPage("install", flex, true, true)
-	pages.SwitchToPage("install")
-
-	go runInstallation()
-}
-
-func runInstallation() {
-	time.Sleep(500 * time.Millisecond)
-
-	// Step 1: Check Go
-	logInfo("Checking Go installation...")
-	if !commandExists("go") {
-		logError("Go not found!")
-		showErrorModal("Go is not installed. Please install Go 1.23+ from https://go.dev/dl/")
-		return
-	}
-	logSuccess("Go found!")
-
-	// Step 2: Check .NET
-	logInfo("Checking .NET SDK...")
-	if !commandExists("dotnet") {
-		logError(".NET SDK not found!")
-		showErrorModal(".NET SDK not found. Please install .NET 6.0 from https://dotnet.microsoft.com/download")
-		return
-	}
-	logSuccess(".NET found!")
-
-	// Step 3: Build Go server
-	logInfo("Building Go MCP Server...")
-	if err := buildGoServer(); err != nil {
-		logError("Failed to build Go server")
-		showErrorModal(fmt.Sprintf("Failed to build Go server: %v", err))
-		return
-	}
-	logSuccess("Go MCP Server built!")
-
-	// Step 4: Build C# Mod
-	logInfo("Building C# Stardew Mod...")
-	if err := buildCSharpMod(); err != nil {
-		logError("Failed to build C# mod")
-		showErrorModal(fmt.Sprintf("Failed to build C# mod: %v", err))
-		return
-	}
-	logSuccess("C# Mod built!")
-
-	// Step 5: Install Mod
-	logInfo("Installing mod to Stardew Valley...")
-	if err := installMod(); err != nil {
-		logError("Failed to install mod")
-		showErrorModal(fmt.Sprintf("Failed to install mod: %v", err))
-		return
-	}
-	logSuccess("Mod installed!")
-
-	// Step 6: Create config
-	logInfo("Creating configuration...")
-	if err := createConfig(); err != nil {
-		logError("Failed to create config")
+	if m.choiceSelected == 0 {
+		installBtn = buttonFocusedStyle.Render("[ Install Everything ]")
 	} else {
-		logSuccess("Configuration created!")
+		installBtn = buttonStyle.Render(installBtn)
 	}
 
-	log("")
-	logSuccess("🎉 Installation Complete! 🎉")
-	log("")
+	if m.choiceSelected == 1 {
+		exitBtn = buttonFocusedStyle.Render("[ Exit ]")
+	} else {
+		exitBtn = buttonStyle.Render(exitBtn)
+	}
 
-	showSuccess()
+	features := normalText.Render(`
+This installer will set up everything you need:
+
+  🏗️  Build Go MCP Server
+  🔧  Build C# Stardew Valley Mod
+  📦  Install mod to your game folder
+  🔗  Configure OpenClaw & Remote options
+
+Use ↑↓ to select, Enter to confirm
+`)
+
+	content := fmt.Sprintf(`
+%s
+
+%s
+
+%s
+
+
+%s  %s
+`, title, subtitle, boxStyle.Width(50).Render(features), installBtn, exitBtn)
+
+	return centerContent(content, m.width, m.height)
 }
 
-func showSuccess() {
-	app.QueueUpdate(func() {
+func (m model) viewPath() string {
+	title := headerStyle.Render("Stardew Valley Location")
+
+	detected := infoText.Render(fmt.Sprintf("Auto-detected: %s", m.pathDetected))
+	currentPath := normalText.Render(fmt.Sprintf("Current path: %s", m.stardewPath))
+
+	instructions := normalText.Render(`
+Enter the path where Stardew Valley is installed
+Press TAB to use auto-detected path
+`)
+
+	nav := normalText.Render(`
+[< Back]                      [Next >]
+`)
+
+	content := fmt.Sprintf(`
+%s
+
+%s
+%s
+
+Path: %s
+
+%s
+
+%s
+`, title, detected, currentPath, m.pathInput.View(), instructions, nav)
+
+	return centerContent(boxStyle.Width(60).Render(content), m.width, m.height)
+}
+
+func (m model) viewOptions() string {
+	title := headerStyle.Render("Additional Options")
+
+	openclawMark := " "
+	remoteMark := " "
+	autoMark := "✓"
+
+	if m.openclaw {
+		openclawMark = "✓"
+	}
+	if m.remote {
+		remoteMark = "✓"
+	}
+	if m.autoStart {
+		autoMark = "✓"
+	}
+
+	openclaw := normalText.Render(fmt.Sprintf("[%s] Enable OpenClaw Gateway", openclawMark))
+	remote := normalText.Render(fmt.Sprintf("[%s] Enable Remote Server Mode", remoteMark))
+	auto := normalText.Render(fmt.Sprintf("[%s] Auto-start agent on connect", autoMark))
+
+	nav := normalText.Render(`
+[< Back]                    [Install Now]
+`)
+
+	content := fmt.Sprintf(`
+%s
+
+%s
+%s
+%s
+
+%s
+`, title, openclaw, remote, auto, nav)
+
+	return centerContent(boxStyle.Width(60).Render(content), m.width, m.height)
+}
+
+func (m model) viewInstall() string {
+	title := headerStyle.Render("Installing...")
+
+	if m.installError != "" {
+		errorBox := errorText.Render(fmt.Sprintf("Error: %s", m.installError))
+		return centerContent(boxStyle.Width(60).Render(fmt.Sprintf("%s\n\n%s", title, errorBox)), m.width, m.height)
+	}
+
+	if m.installDone {
 		options := ""
-		if openclawEnabled {
-			options += "\n • OpenClaw Gateway Enabled"
+		if m.openclaw {
+			options += "\n  • OpenClaw Gateway Enabled"
 		}
-		if remoteEnabled {
-			options += "\n • Remote Server Enabled"
+		if m.remote {
+			options += "\n  • Remote Server Enabled"
 		}
 		if options == "" {
-			options = "\n • Default Configuration"
+			options = "\n  • Default Configuration"
 		}
 
-		header := tview.NewTextView().
-			SetTextAlign(tview.AlignCenter).
-			SetText(`[green]╔══════════════════════════════════════════════╗
-║           Installation Complete!           ║
-╚══════════════════════════════════════════════╝[white]`)
+		success := successText.Render("🎉 Installation Complete! 🎉")
+		nextSteps := normalText.Render(fmt.Sprintf(`
+Next Steps:
+  1. Start Stardew Valley through SMAPI
+  2. Load your save file
+  3. Run: cd setup && run.bat
 
-		text := fmt.Sprintf(`[yellow]Location:[white] %s
+Enabled Options:%s
 
-[yellow]Next Steps:[white]
-1. Start Stardew Valley through SMAPI
-2. Load your save file
-3. Run: cd setup && run.bat
+[Exit]
+`, options))
 
-[yellow]Enabled Options:[white]%s`, stardewPath, options)
+		return centerContent(successText.Width(50).Render(successText.Width(50).Render("")), m.width, m.height) + "\n\n" +
+			boxStyle.Width(50).Render(nextSteps), m.width, m.height)
+	}
 
-		desc := tview.NewTextView().
-			SetTextAlign(tview.AlignCenter).
-			SetText(text)
+	// Show logs
+	logContent := normalText.Render(joinLines(m.logLines))
+	m.logs.SetContent(logContent)
 
-		btnExit := tview.NewButton("[Exit]").SetSelectedFunc(func() {
-			app.Stop()
-		})
+	view := fmt.Sprintf(`
+%s
 
-		flex := tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(tview.NewBox(), 0, 2, false).
-			AddItem(header, 6, 0, false).
-			AddItem(desc, 0, 4, false).
-			AddItem(tview.NewBox(), 0, 1, false).
-			AddItem(btnExit, 1, 0, false).
-			AddItem(tview.NewBox(), 0, 2, false)
+%s
 
-		pages.AddPage("success", flex, true, true)
-		pages.SwitchToPage("success")
-	})
+%s
+`, title, m.logs.View(), m.progress.View())
+
+	return centerContent(boxStyle.Width(70).Height(20).Render(view), m.width, m.height)
 }
 
-func showErrorModal(msg string) {
-	app.QueueUpdate(func() {
-		modal := tview.NewModal().
-			SetText(msg).
-			AddButtons([]string{"OK"}).
-			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-				pages.SwitchToPage("install")
-			})
+func centerContent(content string, width, height int) string {
+	lines := lipgloss.SplitLines(content)
+	contentHeight := len(lines)
 
-		pages.AddPage("error", modal, true, false)
-		app.Draw()
-	})
+	if contentHeight >= height {
+		return content
+	}
+
+	emptyLines := (height - contentHeight) / 2
+	top := "\n"
+	for i := 0; i < emptyLines-2; i++ {
+		top += "\n"
+	}
+
+	// Calculate padding
+	maxWidth := 0
+	for _, line := range lines {
+		w := lipgloss.Width(line)
+		if w > maxWidth {
+			maxWidth = w
+		}
+	}
+
+	leftPad := (width - maxWidth) / 2
+	if leftPad < 0 {
+		leftPad = 0
+	}
+
+	padded := ""
+	for _, line := range lines {
+		padded += "\n" + line
+	}
+
+	return top + padded
+}
+
+func joinLines(lines []string) string {
+	result := ""
+	for i, line := range lines {
+		if i > 0 {
+			result += "\n"
+		}
+		result += line
+	}
+	return result
+}
+
+// ============================================================================
+// Installation Logic
+// ============================================================================
+
+func runInstall(m *model) {
+	addLog(m, infoText.Render("Starting installation..."))
+
+	// Step 1: Check Go
+	addLog(m, infoText.Render("Checking Go installation..."))
+	if !commandExists("go") {
+		m.installError = "Go not found! Please install Go 1.23+ from https://go.dev/dl/"
+		addLog(m, errorText.Render("Go not found!"))
+		return
+	}
+	addLog(m, successText.Render("✓ Go found!"))
+	updateProgress(m, 0.15)
+
+	// Step 2: Check .NET
+	addLog(m, infoText.Render("Checking .NET SDK..."))
+	if !commandExists("dotnet") {
+		m.installError = ".NET SDK not found! Please install .NET 6.0+ from https://dotnet.microsoft.com/download"
+		addLog(m, errorText.Render(".NET SDK not found!"))
+		return
+	}
+	addLog(m, successText.Render("✓ .NET found!"))
+	updateProgress(m, 0.30)
+
+	// Step 3: Build Go server
+	addLog(m, infoText.Render("Building Go MCP Server..."))
+	if err := buildGoServer(); err != nil {
+		m.installError = fmt.Sprintf("Failed to build Go server: %v", err)
+		addLog(m, errorText.Render(fmt.Sprintf("Failed: %v", err)))
+		return
+	}
+	addLog(m, successText.Render("✓ Go MCP Server built!"))
+	updateProgress(m, 0.50)
+
+	// Step 4: Build C# Mod
+	addLog(m, infoText.Render("Building C# Stardew Mod..."))
+	if err := buildCSharpMod(); err != nil {
+		m.installError = fmt.Sprintf("Failed to build C# mod: %v", err)
+		addLog(m, errorText.Render(fmt.Sprintf("Failed: %v", err)))
+		return
+	}
+	addLog(m, successText.Render("✓ C# Mod built!"))
+	updateProgress(m, 0.70)
+
+	// Step 5: Install Mod
+	addLog(m, infoText.Render("Installing mod to Stardew Valley..."))
+	if err := installMod(m.stardewPath); err != nil {
+		m.installError = fmt.Sprintf("Failed to install mod: %v", err)
+		addLog(m, errorText.Render(fmt.Sprintf("Failed: %v", err)))
+		return
+	}
+	addLog(m, successText.Render("✓ Mod installed!"))
+	updateProgress(m, 0.85)
+
+	// Step 6: Create config
+	addLog(m, infoText.Render("Creating configuration..."))
+	if err := createConfig(m.autoStart); err != nil {
+		addLog(m, errorText.Render(fmt.Sprintf("Failed: %v", err)))
+	} else {
+		addLog(m, successText.Render("✓ Configuration created!"))
+	}
+	updateProgress(m, 1.0)
+
+	addLog(m, successText.Render("🎉 Installation Complete! 🎉"))
+
+	m.installDone = true
+	m.installing = false
+}
+
+func addLog(m *model, line string) {
+	m.logLines = append(m.logLines, line)
+	if len(m.logLines) > 100 {
+		m.logLines = m.logLines[len(m.logLines)-100:]
+	}
+}
+
+func updateProgress(m *model, pct float64) {
+	m.progress.SetPercent(pct)
 }
 
 // ============================================================================
@@ -436,7 +610,7 @@ func buildCSharpMod() error {
 	return cmd.Run()
 }
 
-func installMod() error {
+func installMod(stardewPath string) error {
 	modsDir := filepath.Join(stardewPath, "Mods", "StardewMCP")
 	if err := os.MkdirAll(modsDir, 0755); err != nil {
 		return err
@@ -446,7 +620,7 @@ func installMod() error {
 	return copyDir(srcDir, modsDir)
 }
 
-func createConfig() error {
+func createConfig(autoStart bool) error {
 	config := fmt.Sprintf(`server:
   game_url: "ws://localhost:8765/game"
   auto_start: %v
